@@ -8,59 +8,68 @@ namespace Idleminer
 {
     public partial class NotificationIcon : Form
     {
-        private readonly TimeSpan timeToTrigger = new TimeSpan(hours: 0, minutes: 5, seconds: 0);
-        private readonly TimeSpan intervalToCheck = new TimeSpan(hours: 0, minutes: 0, seconds: 5);
-
         public NotificationIcon(string path)
         {
-            timer = new System.Timers.Timer(intervalToCheck.TotalMilliseconds);
+            _Path = path;
 
-            processInfo = new ProcessStartInfo(path)
-            {
-                CreateNoWindow = false
-            };
+            _Timer = new System.Timers.Timer(_IntervalToCheck.TotalMilliseconds);
 
             InitializeComponent();
 
             Disposed += _Disposed; ;
         }
 
-        private System.Timers.Timer timer;
+        private System.Timers.Timer _Timer;
 
-        private ProcessStartInfo processInfo;
-        private Process process;
+        private ProcessStartInfo _ProcessInfo;
+        private Process _Process;
+
+        private string _Path;
+
+        private TimeSpan _TimeToTrigger = new TimeSpan(hours: 0, minutes: 5, seconds: 0);
+        private TimeSpan _IntervalToCheck = new TimeSpan(hours: 0, minutes: 0, seconds: 5);
 
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
             Hide();
 
-            timer.Enabled = true;
-            timer.Elapsed += Timer_Elapsed;
+            _CreateProcessInfo();
+
+            _Timer.Enabled = true;
+            _Timer.Elapsed += Timer_Elapsed;
+        }
+
+        private void _CreateProcessInfo()
+        {
+            _ProcessInfo = new ProcessStartInfo(_Path)
+            {
+                CreateNoWindow = false
+            };
         }
 
         private void _KillProcess()
         {
-            process?.CloseMainWindow();
-            process?.WaitForExit();
-            process = null;
+            _Process?.CloseMainWindow();
+            _Process?.WaitForExit();
+            _Process = null;
         }
 
         private void Timer_Elapsed(object sender, EventArgs e)
         {
             var idleTime = Win32.GetIdleTime();
 
-            if (idleTime < timeToTrigger.TotalMilliseconds)
+            if (idleTime < _TimeToTrigger.TotalMilliseconds)
             {
                 _KillProcess();
             }
             else
             {
-                if (process == null)
+                if (_Process == null)
                 {
                     try
                     {
-                        process = Process.Start(processInfo);
+                        _Process = Process.Start(_ProcessInfo);
                     }
                     catch(Exception ex)
                     {
@@ -84,16 +93,30 @@ namespace Idleminer
         private void pauseToolStripMenuItem_Click(object sender, EventArgs e)
         {
             _KillProcess();
-            timer.Enabled = false;
+            _Timer.Enabled = false;
             pauseToolStripMenuItem.Visible = false;
             resumeToolStripMenuItem.Visible = true;
         }
 
         private void resumeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            timer.Enabled = true;
+            _Timer.Enabled = true;
             pauseToolStripMenuItem.Visible = true;
             resumeToolStripMenuItem.Visible = false;
+        }
+
+        private void parametersToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var form = new EditParameters(_Path, _TimeToTrigger, _IntervalToCheck);
+
+            if(form.ShowDialog() == DialogResult.OK)
+            {
+                _Path = form.Path;
+                _TimeToTrigger = form.TimeToTrigger;
+                _IntervalToCheck = form.IntervalToCheck;
+                _CreateProcessInfo();
+                _Timer.Interval = _IntervalToCheck.TotalMilliseconds;
+            }
         }
     }
 }
