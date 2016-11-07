@@ -11,28 +11,26 @@ namespace Idleminer
 {
     class Program
     {
-        private const string NO_PATH_SPECIFIED_MESSAGE = "No path specified";
+        private const string NO_PATH_SPECIFIED_MESSAGE = "Specify the path: ";
 
         static void Main(string[] args)
         {
-            if(args.Count() < 1)
+            string path = args.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(path))
             {
                 Console.WriteLine(NO_PATH_SPECIFIED_MESSAGE);
-                Console.ReadKey();
-
-                return;
+                path = Console.ReadLine();
             }
 
             var timeToTrigger = new TimeSpan(hours: 0, minutes: 5, seconds: 0);
             var sleepTime = new TimeSpan(hours: 0, minutes: 1, seconds: 0);
 
-            var processInfo = new ProcessStartInfo(args.First());
-            processInfo.CreateNoWindow = true;
-            processInfo.UseShellExecute = false;
-            processInfo.RedirectStandardError = true;
-            processInfo.RedirectStandardOutput = true;
+            var processInfo = new ProcessStartInfo(path)
+            {
+                CreateNoWindow = false
+            };
 
-            Process process = null; 
+            Process process = null;
 
             do
             {
@@ -40,7 +38,8 @@ namespace Idleminer
 
                 if (idleTime < timeToTrigger.TotalMilliseconds)
                 {
-                    process?.Close();
+                    process?.CloseMainWindow();
+                    process?.WaitForExit();
                     process = null;
 
                     Thread.Sleep((int)sleepTime.TotalMilliseconds);
@@ -50,13 +49,6 @@ namespace Idleminer
                     if (process == null)
                     {
                         process = Process.Start(processInfo);
-
-                        process.OutputDataReceived += (object sender, DataReceivedEventArgs e) =>
-                            Console.WriteLine("output>>" + e.Data);
-                        process.BeginOutputReadLine();
-
-                        process.ErrorDataReceived += (object sender, DataReceivedEventArgs e) =>
-                            Console.WriteLine("error>>" + e.Data);
                     }
                     else
                     {
