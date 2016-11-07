@@ -80,5 +80,20 @@ namespace Idleminer
             _KillProcess();
             Close();
         }
+
+        private void pauseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            _KillProcess();
+            timer.Enabled = false;
+            pauseToolStripMenuItem.Visible = false;
+            resumeToolStripMenuItem.Visible = true;
+        }
+
+        private void resumeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            timer.Enabled = true;
+            pauseToolStripMenuItem.Visible = true;
+            resumeToolStripMenuItem.Visible = false;
+        }
     }
 }
