@@ -34,6 +34,13 @@ namespace Idleminer
             base.OnLoad(e);
             Hide();
 
+            if (string.IsNullOrWhiteSpace(_Path))
+                _ConfigureParameters();
+
+            // If the user didn't configure a file to be executed, then close the program
+            if (string.IsNullOrWhiteSpace(_Path))
+                _Close();
+
             _CreateProcessInfo();
 
             _Timer.Enabled = true;
@@ -55,6 +62,20 @@ namespace Idleminer
             _Process = null;
         }
 
+        private void _ConfigureParameters()
+        {
+            var form = new EditParameters(_Path, _TimeToTrigger, _IntervalToCheck);
+
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                _Path = form.Path;
+                _TimeToTrigger = form.TimeToTrigger;
+                _IntervalToCheck = form.IntervalToCheck;
+                _CreateProcessInfo();
+                _Timer.Interval = _IntervalToCheck.TotalMilliseconds;
+            }
+        }
+
         private void Timer_Elapsed(object sender, EventArgs e)
         {
             var idleTime = Win32.GetIdleTime();
@@ -71,20 +92,21 @@ namespace Idleminer
                     {
                         _Process = Process.Start(_ProcessInfo);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         MessageBox.Show(ex.ToString(), "Error");
-                        Close();
+                        _Close();
                     }
-                }
-                else
-                {
-                    Thread.Sleep(TimeSpan.FromSeconds(1));
                 }
             }
         }
 
         private void _Disposed(object sender, EventArgs e)
+        {
+            _Close();
+        }
+
+        private void _Close()
         {
             _KillProcess();
             Close();
@@ -107,16 +129,7 @@ namespace Idleminer
 
         private void parametersToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var form = new EditParameters(_Path, _TimeToTrigger, _IntervalToCheck);
-
-            if(form.ShowDialog() == DialogResult.OK)
-            {
-                _Path = form.Path;
-                _TimeToTrigger = form.TimeToTrigger;
-                _IntervalToCheck = form.IntervalToCheck;
-                _CreateProcessInfo();
-                _Timer.Interval = _IntervalToCheck.TotalMilliseconds;
-            }
+            _ConfigureParameters();
         }
     }
 }

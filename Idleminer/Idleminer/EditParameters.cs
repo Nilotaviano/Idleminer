@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -64,8 +65,22 @@ namespace Idleminer
 
         private void btnOk_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.OK;
-            Close();
+            if (File.Exists(Path))
+            {
+                this.DialogResult = DialogResult.OK;
+                FormClosing -= EditParameters_FormClosing;
+                Close();
+            }
+            else
+            {
+                MessageBox.Show("File not found.");
+            }
+        }
+
+        private void EditParameters_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (e.CloseReason == CloseReason.UserClosing)
+                e.Cancel = true;
         }
     }
 }
