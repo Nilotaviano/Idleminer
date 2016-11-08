@@ -9,4 +9,5 @@ The batch file should call whatever miner you want and pass any needed arguments
 
 #### Donations
 BTC Address: 1KGJ3BeVGt12WHbJJ1KeRAxHzksAes9nub
+
 Monero Address: 47NxfSMvT2dSB2wwz2MrBDcR3W7iYsKPULFZnEvhn9fURxEhugmDC2sivPv2GFqC233VtGbQEgbo2N5YDCdDG9R1VpwUavC
