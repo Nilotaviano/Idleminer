@@ -13,60 +13,58 @@ namespace Idleminer
 {
     public partial class EditParameters : Form
     {
-        public EditParameters(string path, TimeSpan timeToTrigger, TimeSpan intervalToCheck)
+        public EditParameters(Parameters parameters)
         {
-            Path = path;
-            TimeToTrigger = timeToTrigger;
-            IntervalToCheck = intervalToCheck;
-
+            Parameters = parameters;
             InitializeComponent();
         }
 
-        public string Path { get; set; }
-        public TimeSpan TimeToTrigger { get; set; }
-        public TimeSpan IntervalToCheck { get; set; }
+        public Parameters Parameters;
 
         protected override void OnLoad(EventArgs e)
         {
-            txtPath.Text = Path;
+            txtPath.Text = Parameters.ExecutablePath;
+
             checkTimePicker.Value = new DateTime(
                 DateTime.Now.Year,
                 DateTime.Now.Month,
                 DateTime.Now.Day,
-                IntervalToCheck.Hours, 
-                IntervalToCheck.Minutes, 
-                IntervalToCheck.Seconds
+                Parameters.IntervalBetweenChecks.Hours,
+                Parameters.IntervalBetweenChecks.Minutes,
+                Parameters.IntervalBetweenChecks.Seconds
             );
 
             idleTimePicker.Value = new DateTime(
                 DateTime.Now.Year,
                 DateTime.Now.Month,
                 DateTime.Now.Day,
-                TimeToTrigger.Hours,
-                TimeToTrigger.Minutes,
-                TimeToTrigger.Seconds
+                Parameters.IdleTimeBeforeStarting.Hours,
+                Parameters.IdleTimeBeforeStarting.Minutes,
+                Parameters.IdleTimeBeforeStarting.Seconds
             ); ;
         }
 
         private void txtPath_TextChanged(object sender, EventArgs e)
         {
-            Path = txtPath.Text;
+            Parameters.ExecutablePath = txtPath.Text;
         }
 
         private void checkTimePicker_ValueChanged(object sender, EventArgs e)
         {
-            IntervalToCheck = new TimeSpan(checkTimePicker.Value.Hour, checkTimePicker.Value.Minute, checkTimePicker.Value.Second);
+            Parameters.IntervalBetweenChecks = new TimeSpan(checkTimePicker.Value.Hour, checkTimePicker.Value.Minute, checkTimePicker.Value.Second);
         }
 
         private void idleTimePicker_ValueChanged(object sender, EventArgs e)
         {
-            TimeToTrigger = new TimeSpan(idleTimePicker.Value.Hour, idleTimePicker.Value.Minute, idleTimePicker.Value.Second);
+            Parameters.IdleTimeBeforeStarting = new TimeSpan(idleTimePicker.Value.Hour, idleTimePicker.Value.Minute, idleTimePicker.Value.Second);
         }
 
         private void btnOk_Click(object sender, EventArgs e)
         {
-            if (File.Exists(Path))
+            if (File.Exists(Parameters.ExecutablePath))
             {
+                _UpdateSettings();
+
                 this.DialogResult = DialogResult.OK;
                 FormClosing -= EditParameters_FormClosing;
                 Close();
@@ -77,6 +75,17 @@ namespace Idleminer
             }
         }
 
+        private void _UpdateSettings()
+        {
+            Properties.Settings.Default.ExecutablePath = Parameters.ExecutablePath;
+            Properties.Settings.Default.IdleTimeBeforeStarting = Parameters.IdleTimeBeforeStarting;
+            Properties.Settings.Default.IntervalBetweenChecks = Parameters.IntervalBetweenChecks;
+            Properties.Settings.Default.Save();
+        }
+
+        /// <summary>
+        /// Necessary to prevent closing without click the "ok" button
+        /// </summary>
         private void EditParameters_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (e.CloseReason == CloseReason.UserClosing)

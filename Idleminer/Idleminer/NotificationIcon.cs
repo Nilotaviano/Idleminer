@@ -8,38 +8,39 @@ namespace Idleminer
 {
     public partial class NotificationIcon : Form
     {
-        public NotificationIcon(string path)
+        public NotificationIcon(Parameters parameters)
         {
-            _Path = path;
+            _Parameters = parameters;
 
-            _Timer = new System.Timers.Timer(_IntervalToCheck.TotalMilliseconds);
+            _Timer = new System.Timers.Timer(parameters.IntervalBetweenChecks.TotalMilliseconds);
 
             InitializeComponent();
 
             Disposed += _Disposed; ;
         }
 
+        private Parameters _Parameters;
+
         private System.Timers.Timer _Timer;
 
         private ProcessStartInfo _ProcessInfo;
         private Process _Process;
 
-        private string _Path;
-
-        private TimeSpan _TimeToTrigger = new TimeSpan(hours: 0, minutes: 5, seconds: 0);
-        private TimeSpan _IntervalToCheck = new TimeSpan(hours: 0, minutes: 0, seconds: 5);
-
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
+
+            // hide window so the program runs only on the taskbar
             Hide();
 
-            if (string.IsNullOrWhiteSpace(_Path))
+            if (string.IsNullOrWhiteSpace(_Parameters.ExecutablePath))
+            {
                 _ConfigureParameters();
 
-            // If the user didn't configure a file to be executed, then close the program
-            if (string.IsNullOrWhiteSpace(_Path))
-                _Close();
+                // If the user didn't configure a file to be executed, then close the program
+                if (string.IsNullOrWhiteSpace(_Parameters.ExecutablePath))
+                    _Close();
+            }
 
             _CreateProcessInfo();
 
@@ -49,7 +50,7 @@ namespace Idleminer
 
         private void _CreateProcessInfo()
         {
-            _ProcessInfo = new ProcessStartInfo(_Path)
+            _ProcessInfo = new ProcessStartInfo(_Parameters.ExecutablePath)
             {
                 CreateNoWindow = false
             };
@@ -64,23 +65,23 @@ namespace Idleminer
 
         private void _ConfigureParameters()
         {
-            var form = new EditParameters(_Path, _TimeToTrigger, _IntervalToCheck);
+            var editParametersForm = new EditParameters(_Parameters);
 
-            if (form.ShowDialog() == DialogResult.OK)
+            if (editParametersForm.ShowDialog() == DialogResult.OK)
             {
-                _Path = form.Path;
-                _TimeToTrigger = form.TimeToTrigger;
-                _IntervalToCheck = form.IntervalToCheck;
+                _Parameters = editParametersForm.Parameters;
+                _Timer.Interval = _Parameters.IntervalBetweenChecks.TotalMilliseconds;
                 _CreateProcessInfo();
-                _Timer.Interval = _IntervalToCheck.TotalMilliseconds;
             }
         }
 
         private void Timer_Elapsed(object sender, EventArgs e)
         {
+            _Timer.Enabled = false;
+
             var idleTime = Win32.GetIdleTime();
 
-            if (idleTime < _TimeToTrigger.TotalMilliseconds)
+            if (idleTime < _Parameters.IdleTimeBeforeStarting.TotalMilliseconds)
             {
                 _KillProcess();
             }
@@ -99,6 +100,8 @@ namespace Idleminer
                     }
                 }
             }
+
+            _Timer.Enabled = true;
         }
 
         private void _Disposed(object sender, EventArgs e)
