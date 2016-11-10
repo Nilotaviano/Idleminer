@@ -12,7 +12,7 @@ namespace Idleminer
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            var parameters = new Parameters(args.First());
+            var parameters = new Parameters(args.FirstOrDefault());
             var application = new NotificationIcon(parameters);
 
             Application.Run(application);
